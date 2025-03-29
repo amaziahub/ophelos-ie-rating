@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from service.db import get_db
-from service.users.models.user import UserDB
+from service.models.user import UserDB
 from service.users.scemas.user import UserCreate
 from service.users.utils import hash_password
 
