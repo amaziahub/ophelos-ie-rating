@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from service.db import get_db
 from service.models.user import UserDB
-from service.users.scemas.user import UserCreate
+from service.schemas.user_schema import UserCreate
 from service.users.utils import hash_password
 
 
@@ -21,6 +21,9 @@ class UserService:
 
     def get_user_by_username(self, username: str):
         return self.db.query(UserDB).filter(UserDB.username == username).first()
+
+    def get_user_by_id(self, id: int):
+        return self.db.query(UserDB).filter(UserDB.id == id).first()
 
     @staticmethod
     def insert_default_users():
