@@ -6,6 +6,15 @@ __pycache__/
 # C extensions
 *.so
 
+.idea
+venv
+**/__pycache__
+**/*.pyc
+.coverage
+coverage.json
+skeleton.db
+service/skeleton.db
+
 # Distribution / packaging
 .Python
 build/
