@@ -38,7 +38,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 app.include_router(health_router.router, prefix="/health")
-# app.include_router(greeter_router.router, prefix="/greet")
 
 
 def main():
