@@ -9,7 +9,6 @@ from starlette import status
 from starlette.middleware.cors import CORSMiddleware
 
 from service.db import Base, engine
-from service.greeter import router as greeter_router
 from service.health import router as health_router
 from service.users.user_service import UserService
 
@@ -39,7 +38,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 app.include_router(health_router.router, prefix="/health")
-app.include_router(greeter_router.router, prefix="/greet")
+# app.include_router(greeter_router.router, prefix="/greet")
 
 
 def main():
