@@ -1,12 +1,12 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import pytest
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, equal_to, has_length
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from service.db import Base
-from service.models import UserDB
+from service.models import UserDB, StatementDB
 from service.schemas.expenditure_schema import ExpenditureSchema
 from service.schemas.income_schema import IncomeSchema
 from service.schemas.statement_schema import StatementRequest
@@ -46,6 +46,81 @@ def user_service(db):
 @pytest.fixture
 def statement_service(user_service, db):
     return StatementService(user_service=user_service, db=db)
+
+
+@pytest.fixture
+def create_statements(db):
+    now = datetime.now(timezone.utc)
+    statements = [
+        StatementDB(user_id=1, report_date=now - timedelta(days=10)),
+        StatementDB(user_id=1, report_date=now - timedelta(days=5)),
+        StatementDB(user_id=1, report_date=now)
+    ]
+
+    db.add_all(statements)
+    db.commit()
+    return statements
+
+
+def test_get_statements_in_period_success(statement_service, create_statements):
+    now = datetime.now(timezone.utc)
+    start_date = now - timedelta(days=7)
+    end_date = now
+
+    result = statement_service.get_statements_in_period(
+        user_id=1,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    assert_that(result, has_length(2))
+
+
+def test_get_statements_in_period_no_results(statement_service):
+    start_date = datetime.now(timezone.utc) - timedelta(days=30)
+    end_date = datetime.now(timezone.utc) - timedelta(days=25)
+
+    with pytest.raises(StatementNotFoundError):
+        statement_service.get_statements_in_period(
+            user_id=1,
+            start_date=start_date,
+            end_date=end_date
+        )
+
+
+def test_get_statements_in_period_user_not_found(statement_service):
+    with pytest.raises(UserNotFoundError):
+        statement_service.get_statements_in_period(
+            user_id=9999,
+            start_date=datetime.now(timezone.utc) - timedelta(days=10),
+            end_date=datetime.now(timezone.utc)
+        )
+
+
+def test_get_statements_in_period_only_start_date(statement_service, create_statements):
+    now = datetime.now(timezone.utc)
+    start_date = now - timedelta(days=6)
+
+    result = statement_service.get_statements_in_period(
+        user_id=1,
+        start_date=start_date,
+        end_date=None
+    )
+
+    assert_that(result, has_length(2))
+
+
+def test_get_statements_in_period_only_end_date(statement_service, create_statements):
+    now = datetime.now(timezone.utc)
+    end_date = now - timedelta(days=7)
+
+    result = statement_service.get_statements_in_period(
+        user_id=1,
+        start_date=None,
+        end_date=end_date
+    )
+
+    assert_that(result, has_length(1))
 
 
 def test_create_statement_non_existent_user(db, statement_service):

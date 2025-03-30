@@ -70,6 +70,27 @@ class StatementService:
 
         return statement
 
+    def get_statements_in_period(self, user_id: int, start_date: Optional[datetime],
+                                 end_date: Optional[datetime]) \
+            -> List[Type[StatementDB]]:
+        user = self.user_service.get_user_by_id(user_id)
+        if not user:
+            raise UserNotFoundError()
+
+        query = self.db.query(StatementDB).filter(StatementDB.user_id == user_id)
+
+        if start_date:
+            query = query.filter(StatementDB.report_date >= start_date)
+        if end_date:
+            query = query.filter(StatementDB.report_date <= end_date)
+
+        statements = query.all()
+
+        if not statements:
+            raise StatementNotFoundError("No statements found for the given period.")
+
+        return statements
+
     def _build_statement(self, statement_data: StatementRequest) -> StatementDB:
         statement = StatementDB(
             user_id=statement_data.user_id,
