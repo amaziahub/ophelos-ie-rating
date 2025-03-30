@@ -1,6 +1,8 @@
 import os
 import subprocess
-from busypie import wait as busy_wait, SECOND
+
+from busypie import wait as busy_wait
+
 from tests.support.client import Client
 
 
@@ -23,7 +25,7 @@ class AppDriver:
             ['python', app_file], env=(os.environ.copy())
         )
 
-        busy_wait().at_most(30, SECOND).ignore_exceptions().until(self.is_healthy)
+        busy_wait().ignore_exceptions().until(self.is_healthy)
 
     def stop(self):
         self._app_p.terminate()
