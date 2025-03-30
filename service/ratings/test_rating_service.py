@@ -1,3 +1,5 @@
+from datetime import datetime, timezone, timedelta
+
 import pytest
 from hamcrest import assert_that, equal_to
 from sqlalchemy import create_engine
@@ -5,8 +7,9 @@ from sqlalchemy.orm import sessionmaker
 
 from service.db import Base
 from service.ratings.rating_service import RatingService
+from service.schemas.rating_schema import RatingResponse
 from service.statements.statement_service import StatementService, \
-    StatementNotFoundError
+    StatementNotFoundError, UserNotFoundError
 from service.models import UserDB, StatementDB, IncomeDB, ExpenditureDB
 from service.users.user_service import UserService
 from service.users.utils import hash_password
@@ -70,14 +73,46 @@ def create_statement(db, create_user):
     return statement
 
 
+@pytest.fixture
+def create_statements_for_period(db, create_user):
+    now = datetime.now(timezone.utc)
+    statements = [
+        StatementDB(user_id=create_user.id, report_date=now - timedelta(days=10)),
+        StatementDB(user_id=create_user.id, report_date=now - timedelta(days=5)),
+        StatementDB(user_id=create_user.id, report_date=now)
+    ]
+
+    db.add_all(statements)
+    db.commit()
+    db.refresh(statements[0])
+    db.refresh(statements[1])
+    db.refresh(statements[2])
+
+    for statement in statements:
+        incomes = [
+            IncomeDB(category="Salary", amount=5000.0, statement_id=statement.id),
+            IncomeDB(category="Freelance", amount=1500.0, statement_id=statement.id)
+        ]
+
+        expenditures = [
+            ExpenditureDB(category="Rent", amount=1200.0, statement_id=statement.id),
+            ExpenditureDB(category="Groceries", amount=300.0, statement_id=statement.id)
+        ]
+
+        db.add_all(incomes + expenditures)
+        db.commit()
+
+    return statements
+
+
 def test_calculate_ie_rating_success(rating_service, create_statement, create_user):
     result = rating_service.calculate_ie_rating(report_id=create_statement.id,
                                                 user_id=create_user.id)
 
-    assert_that(result.total_income, equal_to(7000.0))  # 5000 + 2000
-    assert_that(result.total_expenditure, equal_to(2000.0))  # 1500 + 500
-    assert_that(result.disposable_income, equal_to(5000.0))  # 7000 - 2000
-    assert_that(result.grade, equal_to("B"))  # Ratio is between 10% - 30%
+    assert_that(result.total_income, equal_to(7000.0))
+    assert_that(result.total_expenditure, equal_to(2000.0))
+    assert_that(result.disposable_income, equal_to(5000.0))
+    assert_that(result.grade, equal_to("B"))
 
 
 def test_calculate_ie_rating_no_income(rating_service, create_statement, db):
@@ -124,3 +159,75 @@ def test_calculate_ie_rating_no_income_no_expenditure(rating_service, create_sta
 def test_calculate_ie_rating_statement_not_found(create_user, rating_service):
     with pytest.raises(StatementNotFoundError):
         rating_service.calculate_ie_rating(report_id=9999, user_id=1)
+
+
+def test_calculate_period_rating_success(rating_service, create_user,
+                                         create_statements_for_period):
+    now = datetime.now(timezone.utc)
+    start_date = now - timedelta(days=15)
+    end_date = now
+
+    response: RatingResponse = rating_service.calculate_period_rating(
+        user_id=create_user.id,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    assert_that(response.total_income, equal_to(19500.0))
+    assert_that(response.total_expenditure, equal_to(4500.0))
+    assert_that(response.disposable_income, equal_to(15000.0))
+    assert_that(response.grade, equal_to("B"))
+
+
+def test_calculate_period_rating_no_statements(rating_service, create_user):
+    start_date = datetime.now(timezone.utc) - timedelta(days=100)
+    end_date = datetime.now(timezone.utc) - timedelta(days=50)
+
+    with pytest.raises(StatementNotFoundError):
+        rating_service.calculate_period_rating(
+            user_id=create_user.id,
+            start_date=start_date,
+            end_date=end_date
+        )
+
+
+def test_calculate_period_rating_user_not_found(rating_service):
+    with pytest.raises(UserNotFoundError):
+        rating_service.calculate_period_rating(
+            user_id=9999,
+            start_date=datetime.now(timezone.utc) - timedelta(days=10),
+            end_date=datetime.now(timezone.utc)
+        )
+
+
+def test_calculate_period_rating_only_start_date(rating_service, create_user,
+                                                 create_statements_for_period):
+    now = datetime.now(timezone.utc)
+    start_date = now - timedelta(days=6)
+
+    response: RatingResponse = rating_service.calculate_period_rating(
+        user_id=create_user.id,
+        start_date=start_date,
+        end_date=None
+    )
+
+    assert_that(response.total_income,
+                equal_to(13000.0))
+    assert_that(response.total_expenditure, equal_to(3000.0))
+    assert_that(response.grade, equal_to("B"))
+
+
+def test_calculate_period_rating_only_end_date(rating_service, create_user,
+                                               create_statements_for_period):
+    now = datetime.now(timezone.utc)
+    end_date = now - timedelta(days=7)
+
+    response: RatingResponse = rating_service.calculate_period_rating(
+        user_id=create_user.id,
+        start_date=None,
+        end_date=end_date
+    )
+
+    assert_that(response.total_income, equal_to(6500.0))
+    assert_that(response.total_expenditure, equal_to(1500.0))
+    assert_that(response.grade, equal_to("B"))
