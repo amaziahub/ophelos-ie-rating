@@ -34,3 +34,6 @@ class AppDriver:
 
     def submit_statement(self, statement):
         return self.app_client.submit_statement(statement)
+
+    def get_statement(self, statement_id, user_id):
+        return self.app_client.get_statement_by_id(statement_id, user_id)

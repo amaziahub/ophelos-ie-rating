@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
-from typing import Type, Any, List
+from typing import Type, Any, List, Optional
 
 from sqlalchemy.orm import Session
+from starlette import status
+from starlette.exceptions import HTTPException
 
 from service.models import StatementDB, IncomeDB, ExpenditureDB
 from service.schemas.statement_schema import StatementRequest
@@ -40,6 +42,20 @@ class StatementService:
         self.db.add_all(incomes + expenditures)
         self.db.commit()
         self.db.refresh(statement)
+
+        return statement
+
+    def get_statement(self, report_id: int, user_id: int) -> StatementDB:
+        statement: Optional[StatementDB] = self.db.query(StatementDB).filter(
+            StatementDB.id == report_id,
+            StatementDB.user_id == user_id
+        ).first()
+
+        if statement is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Statement not found"
+            )
 
         return statement
 

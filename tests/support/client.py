@@ -1,3 +1,4 @@
+import json
 import os
 
 import requests
@@ -27,17 +28,22 @@ class Client:
 
     def submit_statement(self, statement):
         response = requests.post(f"{self.root}/api/statements",
-                                 json={
-                                     "expenditures": [
-                                         {
-                                             "amount": 1500.0,
-                                             "category": "Rent"
-                                         }],
-                                     "incomes": [
-                                         {
-                                             "amount": 5000.0,
-                                             "category": "Salary"
-                                         }],
-                                     "user_id": 1})
+                                 json=json.loads(statement))
         assert_that(response.status_code, is_(201))
+        return response.json()
+
+    def get_statement_by_id(self, statement_id, user_id):
+        response = requests.get(
+            f"{self.root}/api/statements",
+            params={
+                "id": statement_id,
+                "user": user_id
+            },
+            verify=False
+        )
+
+        if response.status_code != 200:
+            response.raise_for_status()
+
+        assert_that(response.status_code, is_(200))
         return response.json()

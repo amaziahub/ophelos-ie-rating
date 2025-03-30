@@ -17,8 +17,9 @@ class StatementDB(Base):
     user = relationship("UserDB", back_populates="statements")
     # one to many -> statement:incomes
     incomes = relationship("IncomeDB", back_populates="statement",
-                           cascade="all, delete-orphan")
+                           lazy="selectin", cascade="all, delete-orphan")
 
     # one to many -> statement:expenditure
     expenditures = relationship("ExpenditureDB", back_populates="statement",
+                                lazy="selectin",
                                 cascade="all, delete-orphan")
