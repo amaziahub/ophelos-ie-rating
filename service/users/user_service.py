@@ -32,15 +32,15 @@ class UserService:
         users = user_service.get_user_by_username("admin")
         if users is None:
             admin_user = UserDB(
-                username="admin",
-                password="password",
+                username="ophelos",
+                password="passw0rd",
             )
             user_service.create_user(admin_user)
 
         users = user_service.get_user_by_username("hello")
         if users is None:
             hello_user = UserDB(
-                username="hello",
-                password="world",
+                username="guest",
+                password="password1",
             )
             user_service.create_user(hello_user)

@@ -100,6 +100,9 @@ $ docker run -d -p 8080:8080 ie-rating-app
 
 The API documentation is available via Swagger UI once the application is running:
 
+There are 2 users that are comes with the application embedded already:
+**`ophelos` -> id `1` and `guest` -> id `2` please use these user_id's to test with swagger client**
+
 ```shell
 http://localhost:8080/docs
 ```
