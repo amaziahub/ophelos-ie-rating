@@ -55,13 +55,13 @@ class StatementService:
 
         return statement
 
-    def get_statement(self, report_id: int, user_id: int) -> StatementDB:
+    def get_statement(self, statement_id: int, user_id: int) -> StatementDB:
         user = self.user_service.get_user_by_id(user_id)
         if not user:
             raise UserNotFoundError()
 
         statement: Optional[StatementDB] = self.db.query(StatementDB).filter(
-            StatementDB.id == report_id,
+            StatementDB.id == statement_id,
             StatementDB.user_id == user_id
         ).first()
 

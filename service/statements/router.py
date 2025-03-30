@@ -32,14 +32,15 @@ def create_statement(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@router.get("", response_model=StatementResponse, status_code=status.HTTP_200_OK)
+@router.get("/{statement_id}", response_model=StatementResponse,
+            status_code=status.HTTP_200_OK)
 def get_statement(
-    id: int,
+    statement_id: int,
     user_id: int,
     service: StatementService = Depends(get_statement_service)
 ):
     try:
-        statement = service.get_statement(report_id=id, user_id=user_id)
+        statement = service.get_statement(statement_id=statement_id, user_id=user_id)
         statement_data = jsonable_encoder(statement)
         return StatementResponse.model_validate(statement_data)
     except StatementNotFoundError:

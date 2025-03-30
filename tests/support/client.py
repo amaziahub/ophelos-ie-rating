@@ -25,9 +25,8 @@ class Client:
 
     def get_statement_by_id(self, statement_id, user_id):
         response = requests.get(
-            f"{self.root}/api/statements",
+            f"{self.root}/api/statements/{statement_id}",
             params={
-                "id": statement_id,
                 "user_id": user_id
             },
             verify=False

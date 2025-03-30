@@ -173,14 +173,14 @@ def test_successfully_retrieve_statement(db, statement_service):
 
 def test_statement_not_found_given_non_existing_report_id(statement_service):
     with pytest.raises(StatementNotFoundError) as exc_info:
-        statement_service.get_statement(report_id=9999, user_id=1)
+        statement_service.get_statement(statement_id=9999, user_id=1)
 
     assert_that(str(exc_info.value), equal_to(STATEMENT_NOT_FOUND))
 
 
 def test_retrieve_statement_given_invalid_user(statement_service):
     with pytest.raises(UserNotFoundError) as exc_info:
-        statement_service.get_statement(report_id=1, user_id=INVALID_USER_ID)
+        statement_service.get_statement(statement_id=1, user_id=INVALID_USER_ID)
 
     assert_that(str(exc_info.value), equal_to(USER_NOT_FOUND))
 
@@ -195,7 +195,8 @@ def test_retrieve_statement_with_wrong_user(db, statement_service):
     db.refresh(other_user)
 
     with pytest.raises(Exception) as exc_info:
-        statement_service.get_statement(report_id=statement.id, user_id=other_user.id)
+        statement_service.get_statement(statement_id=statement.id,
+                                        user_id=other_user.id)
 
     assert_that(str(exc_info.value), equal_to(STATEMENT_NOT_FOUND))
 
