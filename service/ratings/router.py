@@ -2,13 +2,12 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
-from service.dependencies import get_statement_service, get_db
-from service.schemas.rating_schema import RatingResponse
-from service.statements.statement_service import StatementService, UserNotFoundError, \
-    StatementNotFoundError, USER_NOT_FOUND, STATEMENT_NOT_FOUND
+from service.dependencies import get_rating_service
 from service.ratings.rating_service import RatingService
+from service.schemas.rating_schema import RatingResponse
+from service.statements.statement_service import UserNotFoundError, \
+    StatementNotFoundError, USER_NOT_FOUND, STATEMENT_NOT_FOUND
 
 router = APIRouter()
 
@@ -19,10 +18,8 @@ def calculate_rating(
     user_id: int = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    db: Session = Depends(get_db),
-    statement_service: StatementService = Depends(get_statement_service)
+    rating_service: RatingService = Depends(get_rating_service)
 ):
-    rating_service = RatingService(db=db, statement_service=statement_service)
     try:
         if report_id:
             result = rating_service.calculate_ie_rating(report_id, user_id)
