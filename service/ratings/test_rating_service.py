@@ -2,30 +2,14 @@ from datetime import datetime, timezone, timedelta
 
 import pytest
 from hamcrest import assert_that, equal_to
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from service.db import Base
+from service.models import UserDB, StatementDB, IncomeDB, ExpenditureDB
 from service.ratings.rating_service import RatingService
 from service.schemas.rating_schema import RatingResponse
 from service.statements.statement_service import StatementService, \
     StatementNotFoundError, UserNotFoundError
-from service.models import UserDB, StatementDB, IncomeDB, ExpenditureDB
 from service.users.user_service import UserService
 from service.users.utils import hash_password
-
-TEST_DATABASE_URL = "sqlite:///./test_rating_service.db"
-engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-@pytest.fixture(scope="function")
-def db():
-    Base.metadata.create_all(bind=engine)
-    session = TestingSessionLocal()
-    yield session
-    session.close()
-    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture

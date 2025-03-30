@@ -2,10 +2,7 @@ from datetime import datetime, timezone, timedelta
 
 import pytest
 from hamcrest import assert_that, equal_to, has_length
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from service.db import Base
 from service.models import UserDB, StatementDB
 from service.schemas.expenditure_schema import ExpenditureSchema
 from service.schemas.income_schema import IncomeSchema
@@ -19,19 +16,6 @@ from service.users.utils import hash_password
 
 INVALID_USER_ID = 999
 VALID_USER_ID = 1
-
-TEST_DATABASE_URL = "sqlite:///./test_statement_service.db"
-engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-@pytest.fixture(scope="function")
-def db():
-    Base.metadata.create_all(bind=engine)
-    session = TestingSessionLocal()
-    yield session
-    session.close()
-    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
