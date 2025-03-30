@@ -1,11 +1,8 @@
 from datetime import datetime, timezone
 from typing import Type, Any, List
 
-from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from service.db import get_db
-from service.dependencies import get_user_service
 from service.models import StatementDB, IncomeDB, ExpenditureDB
 from service.schemas.statement_schema import StatementRequest
 from service.users.user_service import UserService
@@ -25,59 +22,58 @@ class NegativeAmountError(ValueError):
         super().__init__(message)
 
 
-def create_statement_service(
-        statement_data: StatementRequest,
-        user_service: UserService = Depends(get_user_service),
-        db: Session = Depends(get_db)) -> StatementDB:
-    user = user_service.get_user_by_id(statement_data.user_id)
-    if not user:
-        raise LookupError(USER_NOT_FOUND)
+class StatementService:
+    def __init__(self, user_service: UserService, db: Session):
+        self.user_service = user_service
+        self.db = db
 
-    statement = create_statement(db, statement_data)
+    def create_statement(self, statement_data: StatementRequest) -> StatementDB:
+        user = self.user_service.get_user_by_id(statement_data.user_id)
+        if not user:
+            raise LookupError(USER_NOT_FOUND)
 
-    incomes = build_records(statement, statement_data.incomes, IncomeDB)
-    expenditures = build_records(statement, statement_data.expenditures, ExpenditureDB)
+        statement = self._create_statement(statement_data)
+        incomes = self._build_records(statement, statement_data.incomes, IncomeDB)
+        expenditures = self._build_records(statement, statement_data.expenditures,
+                                           ExpenditureDB)
 
-    db.add_all(incomes + expenditures)
+        self.db.add_all(incomes + expenditures)
+        self.db.commit()
+        self.db.refresh(statement)
 
-    db.commit()
-    db.refresh(statement)
+        return statement
 
-    return statement
-
-
-def build_records(
-        statement,
-        records_data: list,
-        model_class: Type[Any]
-) -> List[Any]:
-    records = []
-
-    for record in records_data:
-        trimmed_category = (
-            record.category.strip()) \
-            if isinstance(record.category, str) else record.category
-
-        if not trimmed_category:
-            raise EmptyCategoryError()
-
-        if record.amount <= 0:
-            raise NegativeAmountError()
-
-        records.append(
-            model_class(
-                category=trimmed_category,
-                amount=record.amount,
-                statement_id=statement.id
-            )
+    def _create_statement(self, statement_data: StatementRequest) -> StatementDB:
+        statement = StatementDB(
+            user_id=statement_data.user_id,
+            report_date=datetime.now(timezone.utc)
         )
+        self.db.add(statement)
+        self.db.flush()
+        return statement
 
-    return records
+    @staticmethod
+    def _build_records(statement,
+                       records_data: list, model_class: Type[Any]) -> List[Any]:
+        records = []
+        for record in records_data:
+            trimmed_category = (
+                record.category.strip()
+                if isinstance(record.category, str) else record.category
+            )
 
+            if not trimmed_category:
+                raise EmptyCategoryError()
 
-def create_statement(db, statement_data):
-    statement = StatementDB(user_id=statement_data.user_id,
-                            report_date=datetime.now(timezone.utc))
-    db.add(statement)
-    db.flush()
-    return statement
+            if record.amount <= 0:
+                raise NegativeAmountError()
+
+            records.append(
+                model_class(
+                    category=trimmed_category,
+                    amount=record.amount,
+                    statement_id=statement.id
+                )
+            )
+
+        return records

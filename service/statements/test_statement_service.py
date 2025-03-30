@@ -10,9 +10,8 @@ from service.models import UserDB
 from service.schemas.expenditure_schema import ExpenditureSchema
 from service.schemas.income_schema import IncomeSchema
 from service.schemas.statement_schema import StatementRequest
-from service.statements.statement_service import create_statement_service, \
-    USER_NOT_FOUND, NegativeAmountError, POSITIVE_NUMBER, EmptyCategoryError, \
-    CATEGORY_CANNOT_BE_EMPTY
+from service.statements.statement_service import StatementService, USER_NOT_FOUND, \
+    NegativeAmountError, POSITIVE_NUMBER, EmptyCategoryError, CATEGORY_CANNOT_BE_EMPTY
 from service.users.user_service import UserService
 from service.users.utils import hash_password
 
@@ -42,49 +41,51 @@ def user_service(db):
     return UserService(db)
 
 
-def test_create_statement_non_existent_user(db, user_service):
+@pytest.fixture
+def statement_service(user_service, db):
+    return StatementService(user_service=user_service, db=db)
+
+
+def test_create_statement_non_existent_user(db, statement_service):
     statement_data = build_statement(INVALID_USER_ID)
 
     with pytest.raises(LookupError) as exc_info:
-        create_statement_service(statement_data, user_service=user_service, db=db)
+        statement_service.create_statement(statement_data)
 
     assert_that(str(exc_info.value), equal_to(USER_NOT_FOUND))
 
 
-def test_create_statement(db, user_service):
+def test_create_statement(db, statement_service):
     statement_data = build_statement(VALID_USER_ID)
-    statement = create_statement_service(statement_data,
-                                         user_service=user_service,
-                                         db=db)
+    statement = statement_service.create_statement(statement_data)
+
     assert_that(statement.user_id, equal_to(VALID_USER_ID))
     assert_that(statement.report_date.date(),
                 equal_to(datetime.now(timezone.utc).date()))
 
 
-def test_raise_exception_given_negative_amount(db, user_service):
+def test_raise_exception_given_negative_amount(db, statement_service):
     statement_data = build_statement(VALID_USER_ID)
-
     statement_data.incomes[0].amount = -10
 
     with pytest.raises(NegativeAmountError) as exc_info:
-        create_statement_service(statement_data, user_service=user_service, db=db)
+        statement_service.create_statement(statement_data)
 
     assert_that(str(exc_info.value), equal_to(POSITIVE_NUMBER))
 
 
-def test_raise_exception_given_empty_category(db, user_service):
+def test_raise_exception_given_empty_category(db, statement_service):
     statement_data = build_statement(VALID_USER_ID)
-
     statement_data.incomes[0].category = ""
 
     with pytest.raises(EmptyCategoryError) as exc_info:
-        create_statement_service(statement_data, user_service=user_service, db=db)
+        statement_service.create_statement(statement_data)
 
     assert_that(str(exc_info.value), equal_to(CATEGORY_CANNOT_BE_EMPTY))
 
 
 def build_statement(user_id):
-    statement_data = StatementRequest(
+    return StatementRequest(
         user_id=user_id,
         incomes=[
             IncomeSchema(category="Salary", amount=5000.0),
@@ -93,4 +94,3 @@ def build_statement(user_id):
             ExpenditureSchema(category="Rent", amount=1500.0),
         ]
     )
-    return statement_data
