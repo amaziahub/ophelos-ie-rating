@@ -1,6 +1,6 @@
 .PHONY: all
 
-IMAGE_NAME ?= py-service-skeleton
+IMAGE_NAME ?= ie-rating-app
 
 test:
 	@echo "Running tests..."
