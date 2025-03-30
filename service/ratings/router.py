@@ -24,15 +24,13 @@ def calculate_rating(
 ):
     rating_service = RatingService(db=db, statement_service=statement_service)
     try:
-        if start_date:
-            start_date = datetime.fromisoformat(start_date)
-        if end_date:
-            end_date = datetime.fromisoformat(end_date)
         if report_id:
             result = rating_service.calculate_ie_rating(report_id, user_id)
         else:
+            parsed_start_date = parse_iso_date(start_date)
+            parsed_end_date = parse_iso_date(end_date)
             result = rating_service.calculate_period_rating(
-                user_id, start_date, end_date)
+                user_id, parsed_start_date, parsed_end_date)
         return result
     except UserNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -40,3 +38,15 @@ def calculate_rating(
     except StatementNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=STATEMENT_NOT_FOUND)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+def parse_iso_date(date_str: Optional[str]) -> Optional[datetime]:
+    if date_str:
+        try:
+            return datetime.fromisoformat(date_str)
+        except ValueError:
+            raise ValueError(f"Invalid date format: {date_str}. "
+                             f"Use ISO 8601 format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)")
+    return None

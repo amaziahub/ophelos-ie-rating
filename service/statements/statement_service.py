@@ -8,7 +8,6 @@ from service.schemas.statement_schema import StatementRequest
 from service.users.user_service import UserService
 
 STATEMENT_NOT_FOUND = "Statement not found"
-
 USER_NOT_FOUND = "User not found"
 POSITIVE_NUMBER = "Amount must be a positive number"
 CATEGORY_CANNOT_BE_EMPTY = "Category cannot be empty"
