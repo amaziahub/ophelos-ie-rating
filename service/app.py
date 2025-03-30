@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from starlette import status
 from starlette.middleware.cors import CORSMiddleware
 
-from service.db import Base, engine
+from service.db import Base, engine, DATABASE_URL
 from service.health import router as health_router
 from service.statements import router as statements_router
 from service.ratings import router as ratings_router
@@ -50,6 +50,15 @@ def main():
     port = int(os.getenv("PORT", 8080))
     uvicorn.run(app, host=host, port=port)
 
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Shutting down application and cleaning up database...")
+    Base.metadata.drop_all(bind=engine)
+    engine.dispose()
+    if os.path.exists(DATABASE_URL):
+        os.remove(DATABASE_URL)
+        logger.info(f"Database file '{DATABASE_URL}' deleted.")
 
 if __name__ == "__main__":
     main()
