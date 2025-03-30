@@ -8,7 +8,8 @@ from starlette.exceptions import HTTPException
 from service.dependencies import get_statement_service
 from service.schemas.statement_schema import StatementRequest, \
     StatementCreateResponse, StatementResponse
-from service.statements.statement_service import StatementService
+from service.statements.statement_service import StatementService, \
+    StatementNotFoundError
 
 router = APIRouter()
 
@@ -37,6 +38,10 @@ def get_statement(
     user: int,
     service: StatementService = Depends(get_statement_service)
 ):
-    statement = service.get_statement(report_id=id, user_id=user)
-    statement_data = jsonable_encoder(statement)
-    return StatementResponse.model_validate(statement_data)
+    try:
+        statement = service.get_statement(report_id=id, user_id=user)
+        statement_data = jsonable_encoder(statement)
+        return StatementResponse.model_validate(statement_data)
+    except StatementNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Statement not found")

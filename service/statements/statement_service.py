@@ -2,12 +2,12 @@ from datetime import datetime, timezone
 from typing import Type, Any, List, Optional
 
 from sqlalchemy.orm import Session
-from starlette import status
-from starlette.exceptions import HTTPException
 
 from service.models import StatementDB, IncomeDB, ExpenditureDB
 from service.schemas.statement_schema import StatementRequest
 from service.users.user_service import UserService
+
+STATEMENT_NOT_FOUND = "Statement not found"
 
 USER_NOT_FOUND = "User not found"
 POSITIVE_NUMBER = "Amount must be a positive number"
@@ -21,6 +21,11 @@ class EmptyCategoryError(ValueError):
 
 class NegativeAmountError(ValueError):
     def __init__(self, message=POSITIVE_NUMBER):
+        super().__init__(message)
+
+
+class StatementNotFoundError(Exception):
+    def __init__(self, message=STATEMENT_NOT_FOUND):
         super().__init__(message)
 
 
@@ -46,16 +51,17 @@ class StatementService:
         return statement
 
     def get_statement(self, report_id: int, user_id: int) -> StatementDB:
+        user = self.user_service.get_user_by_id(user_id)
+        if not user:
+            raise LookupError(USER_NOT_FOUND)
+
         statement: Optional[StatementDB] = self.db.query(StatementDB).filter(
             StatementDB.id == report_id,
             StatementDB.user_id == user_id
         ).first()
 
         if statement is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Statement not found"
-            )
+            raise StatementNotFoundError()
 
         return statement
 
