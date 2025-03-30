@@ -63,3 +63,20 @@ class Client:
 
         assert_that(response.status_code, is_(200))
         return response.json()
+
+    def get_rating_period(self, user_id, start_date, end_date):
+
+        response = requests.get(
+            f"{self.root}/api/ratings",
+            params={
+                "user_id": user_id,
+                "start_date": start_date,
+                "end_date": end_date
+            },
+            verify=False
+        )
+        if response.status_code != 200:
+            response.raise_for_status()
+
+        assert_that(response.status_code, is_(200))
+        return response.json()

@@ -40,3 +40,6 @@ class AppDriver:
 
     def get_rating(self, statement_id, user_id):
         return self.app_client.get_rating_by_id(statement_id, user_id)
+
+    def get_rating_period(self, user_id, start_date, end_date):
+        return self.app_client.get_rating_period(user_id, start_date, end_date)

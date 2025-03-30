@@ -4,10 +4,12 @@ import pytest
 import requests
 from hamcrest import none, assert_that, equal_to, has_length, is_
 
+from service.db import Base, engine
 from service.schemas.expenditure_schema import ExpenditureSchema
 from service.schemas.income_schema import IncomeSchema
 from service.schemas.statement_schema import StatementRequest
 from service.statements.statement_service import USER_NOT_FOUND, STATEMENT_NOT_FOUND
+from service.users.user_service import UserService
 
 
 def test_is_healthy(app):
@@ -68,6 +70,25 @@ def test_calculate_ie_rating_statement_not_found(app):
         app.get_rating(999, 1)
     assert_that(exc_info.value.response.status_code, is_(404))
     assert_that(exc_info.value.response.json()["detail"], equal_to(STATEMENT_NOT_FOUND))
+
+
+def test_calculate_period_rating(app):
+    clean_db()
+
+    app.submit_statement(build_statement(1))
+    app.submit_statement(build_statement(1))
+
+    response = app.get_rating_period(1, start_date="2025-01-01", end_date="2025-12-31")
+
+    assert_that(response["total_income"], equal_to(10000.0))
+    assert_that(response["total_expenditure"], equal_to(3000.0))
+    assert_that(response["grade"], equal_to("B"))
+
+
+def clean_db():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    UserService.insert_default_users()
 
 
 def build_statement(user_id):
