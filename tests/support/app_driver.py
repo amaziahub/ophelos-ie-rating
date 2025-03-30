@@ -32,8 +32,5 @@ class AppDriver:
     def is_healthy(self):
         return self.app_client.is_healthy()
 
-    def greet(self, name, msg):
-        return self.app_client.greet(name, msg)
-
-    def login(self, username, password):
-        return self.app_client.login(username, password)
+    def submit_statement(self, statement):
+        return self.app_client.submit_statement(statement)

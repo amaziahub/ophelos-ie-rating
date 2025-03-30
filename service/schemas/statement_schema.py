@@ -13,6 +13,10 @@ class StatementRequest(BaseModel):
     expenditures: List[ExpenditureSchema] = []
 
 
+class StatementCreateResponse(BaseModel):
+    statement_id: int
+
+
 class StatementResponse(BaseModel):
     id: int
     user_id: int

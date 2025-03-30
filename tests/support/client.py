@@ -1,4 +1,5 @@
 import os
+
 import requests
 from hamcrest import assert_that, is_
 
@@ -24,11 +25,19 @@ class Client:
                                  })
         assert_that(response.status_code, is_(201))
 
-    def login(self, username, password):
-        response = requests.post(f"{self.root}/login",
+    def submit_statement(self, statement):
+        response = requests.post(f"{self.root}/api/statements",
                                  json={
-                                     "username": f"{username}",
-                                     "password": f"{password}"
-                                 })
-        assert_that(response.status_code, is_(200))
+                                     "expenditures": [
+                                         {
+                                             "amount": 1500.0,
+                                             "category": "Rent"
+                                         }],
+                                     "incomes": [
+                                         {
+                                             "amount": 5000.0,
+                                             "category": "Salary"
+                                         }],
+                                     "user_id": 1})
+        assert_that(response.status_code, is_(201))
         return response.json()
