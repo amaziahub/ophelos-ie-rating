@@ -17,15 +17,6 @@ class Client:
         assert_that(response.status_code, is_(200))
         return response
 
-    def greet(self, name, msg):
-        response = requests.post(f"{self.root}/greet",
-                                 json={
-                                     "user_id": 1,
-                                     "name": f"{name}",
-                                     "greet_msg": f"{msg}"
-                                 })
-        assert_that(response.status_code, is_(201))
-
     def submit_statement(self, statement):
         response = requests.post(f"{self.root}/api/statements",
                                  json=json.loads(statement))
@@ -37,7 +28,7 @@ class Client:
             f"{self.root}/api/statements",
             params={
                 "id": statement_id,
-                "user": user_id
+                "user_id": user_id
             },
             verify=False
         )

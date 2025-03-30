@@ -35,11 +35,11 @@ def create_statement(
 @router.get("", response_model=StatementResponse, status_code=status.HTTP_200_OK)
 def get_statement(
     id: int,
-    user: int,
+    user_id: int,
     service: StatementService = Depends(get_statement_service)
 ):
     try:
-        statement = service.get_statement(report_id=id, user_id=user)
+        statement = service.get_statement(report_id=id, user_id=user_id)
         statement_data = jsonable_encoder(statement)
         return StatementResponse.model_validate(statement_data)
     except StatementNotFoundError:
