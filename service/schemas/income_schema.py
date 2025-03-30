@@ -11,5 +11,4 @@ class IncomeResponse(BaseModel):
     category: str
     amount: float
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

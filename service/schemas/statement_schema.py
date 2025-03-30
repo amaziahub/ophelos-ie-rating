@@ -24,5 +24,4 @@ class StatementResponse(BaseModel):
     incomes: List[IncomeResponse]
     expenditures: List[ExpenditureResponse]
 
-    class Config:
-        model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True}
