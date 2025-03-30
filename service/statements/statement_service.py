@@ -39,7 +39,7 @@ class StatementService:
         if not user:
             raise LookupError(USER_NOT_FOUND)
 
-        statement = self._create_statement(statement_data)
+        statement = self._build_statement(statement_data)
         incomes = self._build_records(statement, statement_data.incomes, IncomeDB)
         expenditures = self._build_records(statement, statement_data.expenditures,
                                            ExpenditureDB)
@@ -65,7 +65,7 @@ class StatementService:
 
         return statement
 
-    def _create_statement(self, statement_data: StatementRequest) -> StatementDB:
+    def _build_statement(self, statement_data: StatementRequest) -> StatementDB:
         statement = StatementDB(
             user_id=statement_data.user_id,
             report_date=datetime.now(timezone.utc)
