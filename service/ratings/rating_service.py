@@ -38,9 +38,9 @@ class RatingService:
 def calculate_grade(ratio: float) -> str:
     if ratio < 0.1:
         return "A"
-    elif ratio < 0.3:
+    elif ratio <= 0.3:
         return "B"
-    elif ratio < 0.5:
+    elif ratio <= 0.5:
         return "C"
     else:
         return "D"

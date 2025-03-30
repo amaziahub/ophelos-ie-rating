@@ -7,6 +7,7 @@ from hamcrest import none, assert_that, equal_to, has_length, is_
 from service.schemas.expenditure_schema import ExpenditureSchema
 from service.schemas.income_schema import IncomeSchema
 from service.schemas.statement_schema import StatementRequest
+from service.statements.statement_service import USER_NOT_FOUND, STATEMENT_NOT_FOUND
 
 
 def test_is_healthy(app):
@@ -40,6 +41,33 @@ def test_unable_to_retrieve_statement_of_different_user(app):
         app.get_statement(statement_id, 2)
 
     assert_that(exc_info.value.response.status_code, is_(404))
+
+
+def test_calculate_ie_rating_success(app):
+    response = app.submit_statement(build_statement(1))
+    statement_id = response["statement_id"]
+
+    rating_response = app.get_rating(statement_id, 1)
+
+    assert_that(rating_response["total_income"], equal_to(5000.0))
+    assert_that(rating_response["total_expenditure"], equal_to(1500.0))
+    assert_that(rating_response["disposable_income"], equal_to(3500.0))
+    assert_that(rating_response["grade"], equal_to("B"))
+
+
+def test_calculate_ie_rating_user_not_found(app):
+    with pytest.raises(requests.HTTPError) as exc_info:
+        app.get_rating(1, 999)
+
+    assert_that(exc_info.value.response.status_code, is_(404))
+    assert_that(exc_info.value.response.json()["detail"], equal_to(USER_NOT_FOUND))
+
+
+def test_calculate_ie_rating_statement_not_found(app):
+    with pytest.raises(requests.HTTPError) as exc_info:
+        app.get_rating(999, 1)
+    assert_that(exc_info.value.response.status_code, is_(404))
+    assert_that(exc_info.value.response.json()["detail"], equal_to(STATEMENT_NOT_FOUND))
 
 
 def build_statement(user_id):

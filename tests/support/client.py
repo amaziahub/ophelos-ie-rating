@@ -47,3 +47,19 @@ class Client:
 
         assert_that(response.status_code, is_(200))
         return response.json()
+
+    def get_rating_by_id(self, statement_id, user_id):
+        response = requests.get(
+            f"{self.root}/api/ratings",
+            params={
+                "report_id": statement_id,
+                "user_id": user_id
+            },
+            verify=False
+        )
+
+        if response.status_code != 200:
+            response.raise_for_status()
+
+        assert_that(response.status_code, is_(200))
+        return response.json()

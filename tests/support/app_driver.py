@@ -37,3 +37,6 @@ class AppDriver:
 
     def get_statement(self, statement_id, user_id):
         return self.app_client.get_statement_by_id(statement_id, user_id)
+
+    def get_rating(self, statement_id, user_id):
+        return self.app_client.get_rating_by_id(statement_id, user_id)
