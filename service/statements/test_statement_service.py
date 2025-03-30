@@ -12,7 +12,8 @@ from service.schemas.income_schema import IncomeSchema
 from service.schemas.statement_schema import StatementRequest
 from service.statements.statement_service import StatementService, USER_NOT_FOUND, \
     NegativeAmountError, POSITIVE_NUMBER, EmptyCategoryError, \
-    CATEGORY_CANNOT_BE_EMPTY, StatementNotFoundError, STATEMENT_NOT_FOUND
+    CATEGORY_CANNOT_BE_EMPTY, StatementNotFoundError, STATEMENT_NOT_FOUND, \
+    UserNotFoundError
 from service.users.user_service import UserService
 from service.users.utils import hash_password
 
@@ -50,7 +51,7 @@ def statement_service(user_service, db):
 def test_create_statement_non_existent_user(db, statement_service):
     statement_data = build_statement(INVALID_USER_ID)
 
-    with pytest.raises(LookupError) as exc_info:
+    with pytest.raises(UserNotFoundError) as exc_info:
         statement_service.create_statement(statement_data)
 
     assert_that(str(exc_info.value), equal_to(USER_NOT_FOUND))
@@ -103,7 +104,7 @@ def test_statement_not_found_given_non_existing_report_id(statement_service):
 
 
 def test_retrieve_statement_given_invalid_user(statement_service):
-    with pytest.raises(LookupError) as exc_info:
+    with pytest.raises(UserNotFoundError) as exc_info:
         statement_service.get_statement(report_id=1, user_id=INVALID_USER_ID)
 
     assert_that(str(exc_info.value), equal_to(USER_NOT_FOUND))

@@ -24,6 +24,11 @@ class NegativeAmountError(ValueError):
         super().__init__(message)
 
 
+class UserNotFoundError(Exception):
+    def __init__(self, message=USER_NOT_FOUND):
+        super().__init__(message)
+
+
 class StatementNotFoundError(Exception):
     def __init__(self, message=STATEMENT_NOT_FOUND):
         super().__init__(message)
@@ -37,7 +42,7 @@ class StatementService:
     def create_statement(self, statement_data: StatementRequest) -> StatementDB:
         user = self.user_service.get_user_by_id(statement_data.user_id)
         if not user:
-            raise LookupError(USER_NOT_FOUND)
+            raise UserNotFoundError()
 
         statement = self._build_statement(statement_data)
         incomes = self._build_records(statement, statement_data.incomes, IncomeDB)
@@ -53,7 +58,7 @@ class StatementService:
     def get_statement(self, report_id: int, user_id: int) -> StatementDB:
         user = self.user_service.get_user_by_id(user_id)
         if not user:
-            raise LookupError(USER_NOT_FOUND)
+            raise UserNotFoundError()
 
         statement: Optional[StatementDB] = self.db.query(StatementDB).filter(
             StatementDB.id == report_id,

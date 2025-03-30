@@ -11,6 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from service.db import Base, engine
 from service.health import router as health_router
 from service.statements import router as statements_router
+from service.ratings import router as ratings_router
 from service.users.user_service import UserService
 
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +41,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 app.include_router(health_router.router, prefix="/health")
 app.include_router(statements_router.router, prefix="/api/statements")
+app.include_router(ratings_router.router, prefix="/api/ratings")
 
 
 def main():
