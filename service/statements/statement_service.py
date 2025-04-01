@@ -11,6 +11,13 @@ STATEMENT_NOT_FOUND = "Statement not found"
 USER_NOT_FOUND = "User not found"
 POSITIVE_NUMBER = "Amount must be a positive number"
 CATEGORY_CANNOT_BE_EMPTY = "Category cannot be empty"
+STATEMENT_CANNOT_BE_EMPTY = ("Cannot create statement with no incomes and no "
+                             "expenditures")
+
+
+class EmptyStatementError(Exception):
+    def __init__(self, message=STATEMENT_CANNOT_BE_EMPTY):
+        super().__init__(message)
 
 
 class EmptyCategoryError(ValueError):
@@ -42,6 +49,9 @@ class StatementService:
         user = self.user_service.get_user_by_id(statement_data.user_id)
         if not user:
             raise UserNotFoundError()
+
+        if not statement_data.incomes and not statement_data.expenditures:
+            raise EmptyStatementError()
 
         statement = self._build_statement(statement_data)
         incomes = self._build_records(statement, statement_data.incomes, IncomeDB)

@@ -10,7 +10,7 @@ from service.schemas.statement_schema import StatementRequest
 from service.statements.statement_service import StatementService, USER_NOT_FOUND, \
     NegativeAmountError, POSITIVE_NUMBER, EmptyCategoryError, \
     CATEGORY_CANNOT_BE_EMPTY, StatementNotFoundError, STATEMENT_NOT_FOUND, \
-    UserNotFoundError
+    UserNotFoundError, EmptyStatementError, STATEMENT_CANNOT_BE_EMPTY
 from service.users.user_service import UserService
 from service.users.utils import hash_password
 
@@ -44,6 +44,20 @@ def create_statements(db):
     db.add_all(statements)
     db.commit()
     return statements
+
+
+def test_create_statement_with_no_data(statement_service):
+    statement_data = StatementRequest(
+        user_id=1,
+        incomes=[],
+        expenditures=[]
+    )
+
+    with pytest.raises(EmptyStatementError) as exc_info:
+        statement_service.create_statement(statement_data)
+
+    assert_that(str(exc_info.value), equal_to(
+        STATEMENT_CANNOT_BE_EMPTY))
 
 
 def test_get_statements_in_period_success(statement_service, create_statements):
