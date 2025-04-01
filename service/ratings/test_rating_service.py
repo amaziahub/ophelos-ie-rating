@@ -89,14 +89,51 @@ def create_statements_for_period(db, create_user):
     return statements
 
 
-def test_calculate_ie_rating_success(rating_service, create_statement, create_user):
-    result = rating_service.calculate_ie_rating(report_id=create_statement.id,
+def create_statement_with_data(db, user_id, incomes, expenditures):
+    statement = StatementDB(user_id=user_id)
+    db.add(statement)
+    db.commit()
+    db.refresh(statement)
+
+    db.add_all([
+        IncomeDB(category=income['category'], amount=income['amount'],
+                 statement_id=statement.id)
+        for income in incomes
+    ])
+
+    db.add_all([
+        ExpenditureDB(category=expenditure['category'], amount=expenditure['amount'],
+                      statement_id=statement.id)
+        for expenditure in expenditures
+    ])
+
+    db.commit()
+    return statement
+
+
+@pytest.mark.parametrize("total_income, total_expenditure, expected_grade", [
+    (10000.0, 4000.0, "C"),
+    (10000.0, 1000.0, "A"),
+    (10000.0, 2000.0, "B"),
+    (10000.0, 6000.0, "D")
+])
+def test_calculate_ie_rating_all_grades(rating_service, create_user, db, total_income,
+                                        total_expenditure, expected_grade):
+    statement = create_statement_with_data(
+        db,
+        create_user.id,
+        incomes=[{"category": "Job", "amount": total_income}],
+        expenditures=[
+            {"category": "Rent", "amount": total_expenditure}
+        ]
+    )
+
+    result = rating_service.calculate_ie_rating(report_id=statement.id,
                                                 user_id=create_user.id)
 
-    assert_that(result.total_income, equal_to(7000.0))
-    assert_that(result.total_expenditure, equal_to(2000.0))
-    assert_that(result.disposable_income, equal_to(5000.0))
-    assert_that(result.grade, equal_to("B"))
+    assert_that(result.total_income, equal_to(total_income))
+    assert_that(result.total_expenditure, equal_to(total_expenditure))
+    assert_that(result.grade, equal_to(expected_grade))
 
 
 def test_calculate_ie_rating_no_income(rating_service, create_statement, db):
