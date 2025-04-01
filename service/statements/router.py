@@ -9,7 +9,7 @@ from service.dependencies import get_statement_service
 from service.schemas.statement_schema import StatementRequest, \
     StatementCreateResponse, StatementResponse
 from service.statements.statement_service import StatementService, \
-    StatementNotFoundError
+    StatementNotFoundError, EmptyStatementError
 
 router = APIRouter()
 
@@ -26,7 +26,7 @@ def create_statement(
     try:
         statement = service.create_statement(statement_data)
         return StatementCreateResponse(statement_id=statement.id)
-    except ValueError as e:
+    except (ValueError, EmptyStatementError) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except LookupError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
